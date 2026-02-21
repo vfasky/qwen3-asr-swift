@@ -59,7 +59,7 @@ BUNDLE_ID="${BUNDLE_ID:-com.vfasky.Qwen3VoiceIME}"
 VERSION="${VERSION:-0.1.0}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
 CODESIGN_IDENTITY="${CODESIGN_IDENTITY:-Developer ID Application: Guangzhou Yizhi Information Technology Company Limited (92ZWDWJJNB)}"
-INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Application: Guangzhou Yizhi Information Technology Company Limited (92ZWDWJJNB)}"
+INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Installer: Guangzhou Yizhi Information Technology Company Limited (92ZWDWJJNB)}"
 INSTALL_LOCATION="${INSTALL_LOCATION:-/Applications}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 NOTARIZE_TARGET="${NOTARIZE_TARGET:-}"
@@ -102,6 +102,8 @@ cat > "$APP_DIR/Contents/Info.plist" <<EOF
 
   <key>NSMicrophoneUsageDescription</key>
   <string>This app needs microphone access for speech input.</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>This app needs speech recognition access to transcribe your voice to text.</string>
 </dict>
 </plist>
 EOF
@@ -110,8 +112,11 @@ if [ -n "$CODESIGN_IDENTITY" ]; then
   if [ -f "$APP_DIR/Contents/MacOS/mlx.metallib" ]; then
     codesign --force --timestamp --sign "$CODESIGN_IDENTITY" "$APP_DIR/Contents/MacOS/mlx.metallib"
   fi
-  codesign --force --options runtime --timestamp --sign "$CODESIGN_IDENTITY" "$APP_DIR/Contents/MacOS/$APP_NAME"
-  codesign --force --deep --options runtime --timestamp --sign "$CODESIGN_IDENTITY" "$APP_DIR"
+  codesign --force --options runtime --timestamp --entitlements "$ROOT/entitlements.plist" --sign "$CODESIGN_IDENTITY" "$APP_DIR/Contents/MacOS/$APP_NAME"
+  codesign --force --deep --options runtime --timestamp --entitlements "$ROOT/entitlements.plist" --sign "$CODESIGN_IDENTITY" "$APP_DIR"
+else
+  codesign --force --timestamp --entitlements "$ROOT/entitlements.plist" --sign - "$APP_DIR/Contents/MacOS/$APP_NAME"
+  codesign --force --deep --timestamp --entitlements "$ROOT/entitlements.plist" --sign - "$APP_DIR"
 fi
 
 if [ -n "$INSTALLER_IDENTITY" ]; then
