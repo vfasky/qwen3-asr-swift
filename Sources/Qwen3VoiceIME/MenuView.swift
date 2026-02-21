@@ -10,6 +10,15 @@ struct MenuView: View {
                 .font(.system(size: 12))
                 .frame(maxWidth: 260, alignment: .leading)
 
+            if !appState.lastTranscription.isEmpty {
+                Divider()
+                Text(appState.lastTranscription)
+                    .font(.system(size: 12))
+                    .frame(maxWidth: 260, alignment: .leading)
+                    .lineLimit(6)
+                    .textSelection(.enabled)
+            }
+
             if let progress = appState.downloadProgress {
                 ProgressView(value: progress)
                     .frame(width: 240)

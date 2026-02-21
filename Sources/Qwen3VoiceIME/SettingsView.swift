@@ -167,10 +167,11 @@ private struct HotKeyRecorderButton: View {
 
     private func startCapture() {
         isCapturing = true
-        monitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { event in
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
             let modifiers = carbonModifiers(from: event.modifierFlags)
             hotKey = HotKey(keyCode: UInt32(event.keyCode), modifiers: modifiers, isEnabled: true)
             stopCapture()
+            return nil
         }
     }
 

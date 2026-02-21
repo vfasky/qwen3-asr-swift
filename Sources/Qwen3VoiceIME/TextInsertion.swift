@@ -7,15 +7,10 @@ enum TextInsertion {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         let pasteboard = NSPasteboard.general
 
-        let snapshot = PasteboardSnapshot.capture(from: pasteboard)
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
         sendPasteKeystroke()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            snapshot.restore(to: pasteboard)
-        }
     }
 
     static func isTrustedForInput() -> Bool {
@@ -28,15 +23,15 @@ enum TextInsertion {
     }
 
     private static func sendPasteKeystroke() {
-        let source = CGEventSource(stateID: .hidSystemState)
+        guard let source = CGEventSource(stateID: .combinedSessionState) else { return }
         let keyCode: CGKeyCode = 9
 
         let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true)
         keyDown?.flags = .maskCommand
         let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false)
         keyUp?.flags = .maskCommand
-        keyDown?.post(tap: .cghidEventTap)
-        keyUp?.post(tap: .cghidEventTap)
+        keyDown?.post(tap: .cgAnnotatedSessionEventTap)
+        keyUp?.post(tap: .cgAnnotatedSessionEventTap)
     }
 }
 
