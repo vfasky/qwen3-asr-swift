@@ -3,9 +3,40 @@
 <plist version="1.0">
 <dict>
 	<key>files</key>
-	<dict/>
+	<dict>
+		<key>Resources/Base.lproj/InfoPlist.strings</key>
+		<data>
+		08iTwPu6rsSC2qnJ2Z+xyGZj8F8=
+		</data>
+		<key>Resources/zh-Hans.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			G4KXT/hYXPF1vWwru/z6Mh9eEGY=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+	</dict>
 	<key>files2</key>
-	<dict/>
+	<dict>
+		<key>Resources/Base.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			7tyZ9KrUwC9PYHuV8xsCaSX4Y3XqDBh1SBGRkG+Blqg=
+			</data>
+		</dict>
+		<key>Resources/zh-Hans.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			HsS6ZaAgJfGxGNEJxNp2UJ7mFcpHoPmcmTGPZgVF31w=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+	</dict>
 	<key>rules</key>
 	<dict>
 		<key>^Resources/</key>

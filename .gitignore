@@ -12,3 +12,5 @@ cosyvoice3-mlx-4bit/
 *.pt
 *.onnx
 dist/Sources/Qwen3VoiceIME/icon.png
+build/
+dist/
