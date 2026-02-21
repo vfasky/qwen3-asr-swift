@@ -7,6 +7,9 @@ APP_BUNDLE_NAME="${APP_NAME}.app"
 DIST_DIR="$ROOT/dist"
 BUILD_DIR="$ROOT/.build/release"
 APP_DIR="$DIST_DIR/$APP_BUNDLE_NAME"
+ICON_SRC="$ROOT/Sources/Qwen3VoiceIME/icon.png"
+ICON_NAME="AppIcon"
+ICON_FILE="${ICON_NAME}.icns"
 
 WITH_DMG=0
 if [ "${1-}" = "--dmg" ]; then
@@ -15,7 +18,7 @@ fi
 
 mkdir -p "$DIST_DIR"
 
-swift build -c release --product qwen3-voice-ime
+swift build --disable-sandbox -c release --product qwen3-voice-ime
 
 # Build MLX Metal library (required for GPU kernels) if missing
 if [ ! -f "$BUILD_DIR/mlx.metallib" ]; then
@@ -32,6 +35,24 @@ if [ -f "$BUILD_DIR/mlx.metallib" ]; then
   cp "$BUILD_DIR/mlx.metallib" "$APP_DIR/Contents/MacOS/mlx.metallib"
 else
   echo "warning: $BUILD_DIR/mlx.metallib not found; MLX GPU kernels may fail to load" >&2
+fi
+
+if [ -f "$ICON_SRC" ]; then
+  ICONSET_DIR="$BUILD_DIR/${ICON_NAME}.iconset"
+  ICON_BASE="icon"
+  rm -rf "$ICONSET_DIR"
+  mkdir -p "$ICONSET_DIR"
+  sips -z 16 16 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_16x16.png" >/dev/null
+  sips -z 32 32 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_16x16@2x.png" >/dev/null
+  sips -z 32 32 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_32x32.png" >/dev/null
+  sips -z 64 64 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_32x32@2x.png" >/dev/null
+  sips -z 128 128 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_128x128.png" >/dev/null
+  sips -z 256 256 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_128x128@2x.png" >/dev/null
+  sips -z 256 256 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_256x256.png" >/dev/null
+  sips -z 512 512 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_256x256@2x.png" >/dev/null
+  sips -z 512 512 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_512x512.png" >/dev/null
+  sips -z 1024 1024 "$ICON_SRC" --out "$ICONSET_DIR/${ICON_BASE}_512x512@2x.png" >/dev/null
+  iconutil -c icns "$ICONSET_DIR" -o "$APP_DIR/Contents/Resources/$ICON_FILE"
 fi
 
 BUNDLE_ID="${BUNDLE_ID:-com.example.Qwen3VoiceIME}"
@@ -64,6 +85,9 @@ cat > "$APP_DIR/Contents/Info.plist" <<EOF
 
   <key>CFBundleVersion</key>
   <string>$BUILD_NUMBER</string>
+
+  <key>CFBundleIconFile</key>
+  <string>$ICON_NAME</string>
 
   <key>LSUIElement</key>
   <string>1</string>

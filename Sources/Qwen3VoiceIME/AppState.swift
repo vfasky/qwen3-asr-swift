@@ -19,6 +19,7 @@ final class AppState: ObservableObject {
     private let hotKeyManager = GlobalHotKeyManager()
     private var model: Qwen3ASRModel? = nil
     private var cancellables: Set<AnyCancellable> = []
+    private var targetApplication: NSRunningApplication? = nil
 
     init() {
         hotKeyManager.onHotKey = { [weak self] in
@@ -53,6 +54,7 @@ final class AppState: ObservableObject {
         if isRecording {
             await stopAndTranscribe()
         } else {
+            updateTargetApplication()
             await startRecording()
         }
     }
@@ -60,6 +62,7 @@ final class AppState: ObservableObject {
     func startRecording() async {
         if isBusy || isRecording { return }
         lastError = nil
+        updateTargetApplication()
         do {
             try await recorder.requestMicrophoneAccess()
             try recorder.start()
@@ -93,8 +96,19 @@ final class AppState: ObservableObject {
             }.value
 
             lastTranscription = text
-            statusText = "已转写并输入"
-            TextInsertion.insert(text: text)
+            if let targetApplication, targetApplication.bundleIdentifier != Bundle.main.bundleIdentifier {
+                targetApplication.activate(options: [.activateAllWindows])
+                try? await Task.sleep(nanoseconds: 80_000_000)
+            }
+            let insertionResult = await attemptInsertion(text: text)
+            switch insertionResult {
+            case .success:
+                statusText = "已转写并输入"
+                lastError = nil
+            case .failed(let message):
+                statusText = "已转写但未自动输入"
+                lastError = message
+            }
         } catch {
             lastError = error.localizedDescription
             statusText = "转写失败"
@@ -143,5 +157,70 @@ final class AppState: ObservableObject {
         )
         self.model = loaded
         return loaded
+    }
+
+    private func updateTargetApplication() {
+        let frontmost = NSWorkspace.shared.frontmostApplication
+        if frontmost?.bundleIdentifier != Bundle.main.bundleIdentifier {
+            targetApplication = frontmost
+        }
+    }
+
+    private func attemptInsertion(text: String) async -> TextInsertion.Result {
+        let activeApp = targetApplication ?? NSWorkspace.shared.frontmostApplication
+        let isVSCode = activeApp?.bundleIdentifier == "com.microsoft.VSCode"
+        let isElectron = isVSCode || isElectronApp(activeApp)
+
+        let pid = targetApplication?.processIdentifier ?? activeApp?.processIdentifier
+
+        // Electron 应用：直接走剪贴板粘贴路径，不做无意义的 AX 重试
+        if isElectron, let pid {
+            return await TextInsertion.pasteInsert(
+                text: text,
+                targetPID: pid,
+                preferMenuPaste: true
+            )
+        }
+
+        // 原生应用：尝试辅助功能直接写入，带重试
+        let delays: [UInt64] = [0, 120_000_000, 200_000_000, 320_000_000]
+        var lastResult: TextInsertion.Result = .failed("未知错误")
+        for delay in delays {
+            if delay > 0 {
+                try? await Task.sleep(nanoseconds: delay)
+            }
+            if let targetApplication, targetApplication.bundleIdentifier != Bundle.main.bundleIdentifier {
+                targetApplication.activate(options: [.activateAllWindows])
+            }
+            let currentPID = pid ?? NSWorkspace.shared.frontmostApplication?.processIdentifier
+            lastResult = TextInsertion.insert(text: text, targetPID: currentPID)
+            if case .success = lastResult {
+                return lastResult
+            }
+        }
+
+        // 原生应用 AX 写入也全部失败，最终降级到剪贴板粘贴
+        if let pid {
+            return await TextInsertion.pasteInsert(text: text, targetPID: pid)
+        }
+        return lastResult
+    }
+
+    private func isElectronApp(_ app: NSRunningApplication?) -> Bool {
+        guard let app else { return false }
+        if app.bundleIdentifier?.lowercased().contains("electron") == true {
+            return true
+        }
+        if let bundleURL = app.bundleURL {
+            let frameworkPath = bundleURL.appendingPathComponent("Contents/Frameworks/Electron Framework.framework")
+            if FileManager.default.fileExists(atPath: frameworkPath.path) {
+                return true
+            }
+            let helperPath = bundleURL.appendingPathComponent("Contents/Frameworks/Electron Helper.app")
+            if FileManager.default.fileExists(atPath: helperPath.path) {
+                return true
+            }
+        }
+        return false
     }
 }

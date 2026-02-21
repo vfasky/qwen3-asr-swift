@@ -8,7 +8,7 @@ struct Qwen3VoiceIMEApp: App {
         MenuBarExtra {
             MenuView(appState: appState)
         } label: {
-            Label("Qwen3 Voice IME", systemImage: appState.menuBarIconName)
+            Image(systemName: appState.menuBarIconName)
         }
         .menuBarExtraStyle(.menu)
 
@@ -17,4 +17,3 @@ struct Qwen3VoiceIMEApp: App {
         }
     }
 }
-
