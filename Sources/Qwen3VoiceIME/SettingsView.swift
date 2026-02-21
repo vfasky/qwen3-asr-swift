@@ -32,25 +32,26 @@ struct SettingsView: View {
 private extension SettingsView {
     var generalTab: some View {
         Form {
-            Section {
-                HStack(alignment: .center, spacing: 16) {
-                    Text("识别语言")
-                        .frame(width: 80, alignment: .trailing)
-                        .foregroundStyle(.secondary)
-                    Picker("", selection: $appState.settings.language) {
-                        Text("中文").tag("zh")
-                        Text("英文").tag("en")
-                        Text("自动检测").tag("auto")
-                    }
-                    .labelsHidden()
-                    .frame(maxWidth: 200, alignment: .leading)
-                }
-            } header: {
-                Text("语言设置")
-                    .font(.headline)
-                    .padding(.bottom, 4)
-            }
-            .padding(.bottom, 16)
+            // Section {
+            //     HStack(alignment: .center, spacing: 16) {
+            //         Text("识别语言")
+            //             .frame(width: 80, alignment: .trailing)
+            //             .foregroundStyle(.secondary)
+            //         Picker("", selection: $appState.settings.language) {
+            //             Text("中文").tag("zh")
+            //             Text("英文").tag("en")
+            //             Text("自动检测").tag("auto")
+            //         }
+            //         .labelsHidden()
+            //         .frame(maxWidth: 200, alignment: .leading)
+            //     }
+            // } header: {
+            //     Text("语言设置")
+            //         .font(.headline)
+            //         .padding(.bottom, 4)
+            // }
+            // .padding(.bottom, 6)
+            // .padding(.top, 6)
             
             Section {
                 HStack(spacing: 16) {
@@ -75,7 +76,8 @@ private extension SettingsView {
                     .font(.headline)
                     .padding(.bottom, 4)
             }
-            .padding(.bottom, 16)
+            .padding(.bottom, 6)
+            .padding(.top, 6)
 
             Section {
                 if !TextInsertion.isTrustedForInput() {
@@ -84,12 +86,12 @@ private extension SettingsView {
                             TextInsertion.requestAccessibilityPermission()
                         }
                         Text("用于将转写结果输入到前台应用（模拟粘贴）。")
-                            .font(.system(size: 11))
+                            .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                     }
                 } else {
                     Text("辅助功能权限已授权")
-                        .font(.system(size: 11))
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
             } header: {
