@@ -83,6 +83,22 @@ swift build -c release
 .build/release/qwen3-asr-cli --model 1.7B audio.wav
 ```
 
+### macOS Voice IME (SwiftUI)
+
+This repository includes a simple macOS menu bar voice input utility built with SwiftUI.
+
+```bash
+swift run qwen3-voice-ime
+```
+
+In **Settings**, you can configure:
+
+- A global hotkey to start/stop recording
+- Model size (default: 1.7B)
+- Download source (default: ModelScope)
+
+To insert transcription into the frontmost app, the utility simulates paste (Cmd+V), so you may need to grant **Accessibility** permission.
+
 ## TTS Usage
 
 ### Basic Synthesis
@@ -308,4 +324,3 @@ swift test --filter Qwen3ASRIntegrationTests
 ## License
 
 Apache 2.0 (same as original Qwen3 models)
-

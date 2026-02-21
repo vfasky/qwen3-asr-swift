@@ -111,7 +111,7 @@ public class WhisperFeatureExtractor {
             for mel in 0..<nMels {
                 // Filter edges: filterFreqs[mel], filterFreqs[mel+1], filterFreqs[mel+2]
                 let lowFreq = filterFreqs[mel]
-                let centerFreq = filterFreqs[mel + 1]
+                _ = filterFreqs[mel + 1]
                 let highFreq = filterFreqs[mel + 2]
 
                 // Calculate slopes (HuggingFace formula)

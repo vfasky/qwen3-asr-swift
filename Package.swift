@@ -35,6 +35,10 @@ let package = Package(
         .executable(
             name: "cosyvoice-tts-cli",
             targets: ["CosyVoiceTTSCLI"]
+        ),
+        .executable(
+            name: "qwen3-voice-ime",
+            targets: ["Qwen3VoiceIME"]
         )
     ],
     dependencies: [
@@ -100,6 +104,13 @@ let package = Package(
                 "Qwen3Common",
                 .product(name: "MLX", package: "mlx-swift"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
+            ]
+        ),
+        .executableTarget(
+            name: "Qwen3VoiceIME",
+            dependencies: [
+                "Qwen3ASR",
+                "Qwen3Common"
             ]
         ),
         .testTarget(

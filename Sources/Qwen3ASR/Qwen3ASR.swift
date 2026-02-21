@@ -258,9 +258,10 @@ public enum ASRModelSize {
 // MARK: - Model Loading
 
 public extension Qwen3ASRModel {
-    /// Load model from HuggingFace hub with automatic weight downloading
+    /// Load model with automatic weight downloading
     static func fromPretrained(
         modelId: String = "mlx-community/Qwen3-ASR-0.6B-4bit",
+        source: ModelDownloadSource = .huggingface,
         progressHandler: ((Double, String) -> Void)? = nil
     ) async throws -> Qwen3ASRModel {
         progressHandler?(0.1, "Downloading model...")
@@ -269,10 +270,11 @@ public extension Qwen3ASRModel {
         let modelSize = ASRModelSize.detect(from: modelId)
 
         // Get cache directory
-        let cacheDir = try HuggingFaceDownloader.getCacheDirectory(for: modelId)
+        let cacheDir = try ModelDownloader.getCacheDirectory(for: modelId)
 
         // Download weights and tokenizer files (skips files that already exist on disk)
-        try await HuggingFaceDownloader.downloadWeights(
+        try await ModelDownloader.downloadWeights(
+            source: source,
             modelId: modelId,
             to: cacheDir,
             additionalFiles: ["vocab.json", "merges.txt", "tokenizer_config.json"],
