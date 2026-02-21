@@ -273,6 +273,10 @@ public class Qwen3AudioEncoder: Module {
         super.init()
     }
 
+    public func clearCache() {
+        cachedPosEmbeddings.removeAll(keepingCapacity: false)
+    }
+
     /// Calculate output length from input length using the chunking formula
     /// This matches the Python _get_feat_extract_output_lengths function
     private func getOutputLength(_ inputLength: Int) -> Int {

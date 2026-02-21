@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import MLX
 import Qwen3ASR
 import Qwen3Common
 
@@ -23,6 +24,7 @@ final class AppState: ObservableObject {
     private var targetApplication: NSRunningApplication? = nil
 
     init() {
+        Memory.cacheLimit = 512 * 1024 * 1024
         hotKeyManager.onHotKey = { [weak self] in
             Task { @MainActor in
                 await self?.toggleRecordingFromHotKey()
@@ -93,6 +95,9 @@ final class AppState: ObservableObject {
 
         do {
             let model = try await ensureModelLoaded()
+            defer {
+                model.clearCaches()
+            }
             let text = await Task.detached(priority: .userInitiated) {
                 model.transcribe(audio: samples, sampleRate: sampleRate)
             }.value

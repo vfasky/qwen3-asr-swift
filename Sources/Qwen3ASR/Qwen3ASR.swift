@@ -82,6 +82,11 @@ public class Qwen3ASRModel {
         )
     }
 
+    public func clearCaches() {
+        audioEncoder.clearCache()
+        Memory.clearCache()
+    }
+
     /// Generate text from audio embeddings
     private func generateText(
         audioEmbeds: MLXArray,

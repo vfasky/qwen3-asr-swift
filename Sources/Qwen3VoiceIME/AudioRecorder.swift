@@ -31,7 +31,7 @@ final class AudioRecorder {
 
     func start() throws {
         if isStarted { return }
-        samples.removeAll(keepingCapacity: true)
+        samples.removeAll(keepingCapacity: false)
 
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
@@ -70,7 +70,7 @@ final class AudioRecorder {
         lock.lock()
         defer { lock.unlock() }
         let data = samples
-        samples = []
+        samples.removeAll(keepingCapacity: false)
         return (data, sampleRate)
     }
 }
@@ -85,4 +85,3 @@ enum RecorderError: LocalizedError {
         }
     }
 }
-
