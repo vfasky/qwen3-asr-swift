@@ -53,6 +53,7 @@ public class Qwen3ASRModel {
         audio: [Float],
         sampleRate: Int = 16000,
         language: String? = nil,
+        hotwords: String? = nil,
         maxTokens: Int = 448
     ) -> String {
         // Extract mel features
@@ -78,6 +79,7 @@ public class Qwen3ASRModel {
             audioEmbeds: audioEmbeds,
             textDecoder: textDecoder,
             language: language,
+            hotwords: hotwords,
             maxTokens: maxTokens
         )
     }
@@ -92,6 +94,7 @@ public class Qwen3ASRModel {
         audioEmbeds: MLXArray,
         textDecoder: QuantizedTextModel,
         language: String?,
+        hotwords: String?,
         maxTokens: Int
     ) -> String {
         // Special token IDs
@@ -114,8 +117,25 @@ public class Qwen3ASRModel {
         // Build input_ids array with audio_pad placeholder tokens
         var inputIds: [Int32] = []
 
-        // <|im_start|>system\n<|im_end|>\n
-        inputIds.append(contentsOf: [imStartId, systemId, newlineId, imEndId, newlineId].map { Int32($0) })
+        // System prompt
+        let sysPrompt: String
+        if let hotwords = hotwords, !hotwords.isEmpty, let tokenizer = tokenizer {
+            let processedHotwords = hotwords.components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+            sysPrompt = "You are a helpful assistant. Please prefer the following hotwords during transcription: \(processedHotwords)"
+            let promptTokens = tokenizer.encode(sysPrompt)
+            inputIds.append(Int32(imStartId))
+            inputIds.append(Int32(systemId))
+            inputIds.append(Int32(newlineId))
+            inputIds.append(contentsOf: promptTokens.map { Int32($0) })
+            inputIds.append(Int32(imEndId))
+            inputIds.append(Int32(newlineId))
+        } else {
+            // <|im_start|>system\n<|im_end|>\n
+            inputIds.append(contentsOf: [imStartId, systemId, newlineId, imEndId, newlineId].map { Int32($0) })
+        }
 
         // <|im_start|>user\n<|audio_start|>
         inputIds.append(contentsOf: [imStartId, userId, newlineId, audioStartId].map { Int32($0) })

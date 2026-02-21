@@ -12,6 +12,11 @@ struct SettingsView: View {
                 .tabItem {
                     Label("常规", systemImage: "gearshape")
                 }
+                
+            hotwordsTab
+                .tabItem {
+                    Label("词典", systemImage: "character.book.closed")
+                }
 
             modelTab
                 .tabItem {
@@ -19,7 +24,7 @@ struct SettingsView: View {
                 }
         }
         .padding(20)
-        .frame(width: 560, height: 320)
+        .frame(width: 560, height: 500)
         .background(SettingsWindowActivator().frame(width: 0, height: 0))
     }
 }
@@ -27,6 +32,26 @@ struct SettingsView: View {
 private extension SettingsView {
     var generalTab: some View {
         Form {
+            Section {
+                HStack(alignment: .center, spacing: 16) {
+                    Text("识别语言")
+                        .frame(width: 80, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                    Picker("", selection: $appState.settings.language) {
+                        Text("中文").tag("zh")
+                        Text("英文").tag("en")
+                        Text("自动检测").tag("auto")
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: 200, alignment: .leading)
+                }
+            } header: {
+                Text("语言设置")
+                    .font(.headline)
+                    .padding(.bottom, 4)
+            }
+            .padding(.bottom, 16)
+            
             Section {
                 HStack(spacing: 16) {
                     Toggle("启用热键", isOn: Binding(
@@ -71,6 +96,30 @@ private extension SettingsView {
                 Text("权限")
                     .font(.headline)
                     .padding(.bottom, 4)
+            }
+        }
+        .formStyle(.grouped)
+        .scrollDisabled(true)
+    }
+    
+    var hotwordsTab: some View {
+        Form {
+            Section {
+                TextEditor(text: $appState.settings.hotwords)
+                    .font(.system(.body, design: .monospaced))
+                    .frame(height: 200)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                    )
+            } header: {
+                Text("词典（同音字优先识别，每行一个词）")
+                    .font(.headline)
+                    .padding(.bottom, 4)
+            } footer: {
+                Text("例如：伊智科技")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

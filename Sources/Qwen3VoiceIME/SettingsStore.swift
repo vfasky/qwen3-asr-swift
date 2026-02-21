@@ -35,6 +35,8 @@ final class SettingsStore: ObservableObject {
     @Published var hotKey: HotKey
     @Published var modelSize: ASRModelChoice
     @Published var downloadSource: ModelDownloadSource
+    @Published var hotwords: String
+    @Published var language: String
 
     private let defaults = UserDefaults.standard
     private let encoder = JSONEncoder()
@@ -61,6 +63,9 @@ final class SettingsStore: ObservableObject {
         } else {
             self.downloadSource = .modelscope
         }
+        
+        self.hotwords = defaults.string(forKey: "hotwords") ?? ""
+        self.language = defaults.string(forKey: "language") ?? "zh"
 
         $hotKey
             .sink { [weak self] value in
@@ -80,6 +85,18 @@ final class SettingsStore: ObservableObject {
         $downloadSource
             .sink { [weak self] value in
                 self?.defaults.set(value.rawValue, forKey: "downloadSource")
+            }
+            .store(in: &cancellables)
+            
+        $hotwords
+            .sink { [weak self] value in
+                self?.defaults.set(value, forKey: "hotwords")
+            }
+            .store(in: &cancellables)
+            
+        $language
+            .sink { [weak self] value in
+                self?.defaults.set(value, forKey: "language")
             }
             .store(in: &cancellables)
     }

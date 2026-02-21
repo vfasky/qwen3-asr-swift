@@ -98,8 +98,10 @@ final class AppState: ObservableObject {
             defer {
                 model.clearCaches()
             }
+            let language = self.settings.language == "auto" ? nil : self.settings.language
+            let hotwords = self.settings.hotwords
             let text = await Task.detached(priority: .userInitiated) {
-                model.transcribe(audio: samples, sampleRate: sampleRate)
+                return model.transcribe(audio: samples, sampleRate: sampleRate, language: language, hotwords: hotwords)
             }.value
 
             lastTranscription = text
