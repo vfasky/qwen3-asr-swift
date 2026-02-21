@@ -10,6 +10,7 @@ final class AppState: ObservableObject {
     @Published var isRecording: Bool = false
     @Published var isBusy: Bool = false
     @Published var downloadProgress: Double? = nil
+    @Published var downloadSpeed: String? = nil
     @Published var lastTranscription: String = ""
     @Published var lastError: String? = nil
 
@@ -88,6 +89,7 @@ final class AppState: ObservableObject {
         statusText = "转写中…"
         lastError = nil
         downloadProgress = nil
+        downloadSpeed = nil
 
         do {
             let model = try await ensureModelLoaded()
@@ -116,6 +118,7 @@ final class AppState: ObservableObject {
 
         isBusy = false
         downloadProgress = nil
+        downloadSpeed = nil
     }
 
     func quit() {
@@ -128,6 +131,7 @@ final class AppState: ObservableObject {
         statusText = "准备模型…"
         lastError = nil
         downloadProgress = nil
+        downloadSpeed = nil
         do {
             _ = try await ensureModelLoaded()
             statusText = "模型已就绪"
@@ -137,6 +141,7 @@ final class AppState: ObservableObject {
         }
         isBusy = false
         downloadProgress = nil
+        downloadSpeed = nil
     }
 
     private func ensureModelLoaded() async throws -> Qwen3ASRModel {
@@ -152,6 +157,11 @@ final class AppState: ObservableObject {
                 Task { @MainActor in
                     self?.downloadProgress = progress
                     self?.statusText = message
+                }
+            },
+            speedHandler: { [weak self] speed in
+                Task { @MainActor in
+                    self?.downloadSpeed = speed
                 }
             }
         )

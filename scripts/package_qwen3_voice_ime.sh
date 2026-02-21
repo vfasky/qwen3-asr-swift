@@ -55,9 +55,17 @@ if [ -f "$ICON_SRC" ]; then
   iconutil -c icns "$ICONSET_DIR" -o "$APP_DIR/Contents/Resources/$ICON_FILE"
 fi
 
-BUNDLE_ID="${BUNDLE_ID:-com.example.Qwen3VoiceIME}"
+BUNDLE_ID="${BUNDLE_ID:-com.vfasky.Qwen3VoiceIME}"
 VERSION="${VERSION:-0.1.0}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
+CODESIGN_IDENTITY="${CODESIGN_IDENTITY:-Developer ID Application: Guangzhou Yizhi Information Technology Company Limited (92ZWDWJJNB)}"
+INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Application: Guangzhou Yizhi Information Technology Company Limited (92ZWDWJJNB)}"
+INSTALL_LOCATION="${INSTALL_LOCATION:-/Applications}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-}"
+NOTARIZE_TARGET="${NOTARIZE_TARGET:-}"
+NOTARY_APPLE_ID="${NOTARY_APPLE_ID:-}"
+NOTARY_TEAM_ID="${NOTARY_TEAM_ID:-}"
+NOTARY_PASSWORD="${NOTARY_PASSWORD:-}"
 
 cat > "$APP_DIR/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -98,6 +106,21 @@ cat > "$APP_DIR/Contents/Info.plist" <<EOF
 </plist>
 EOF
 
+if [ -n "$CODESIGN_IDENTITY" ]; then
+  if [ -f "$APP_DIR/Contents/MacOS/mlx.metallib" ]; then
+    codesign --force --timestamp --sign "$CODESIGN_IDENTITY" "$APP_DIR/Contents/MacOS/mlx.metallib"
+  fi
+  codesign --force --options runtime --timestamp --sign "$CODESIGN_IDENTITY" "$APP_DIR/Contents/MacOS/$APP_NAME"
+  codesign --force --deep --options runtime --timestamp --sign "$CODESIGN_IDENTITY" "$APP_DIR"
+fi
+
+if [ -n "$INSTALLER_IDENTITY" ]; then
+  productbuild \
+    --component "$APP_DIR" "$INSTALL_LOCATION" \
+    --sign "$INSTALLER_IDENTITY" \
+    "$DIST_DIR/qwen3-voice-ime.pkg"
+fi
+
 if [ "$WITH_DMG" -eq 1 ]; then
   DMG_DIR="$DIST_DIR/Qwen3-Voice-IME"
   rm -rf "$DMG_DIR"
@@ -110,7 +133,35 @@ if [ "$WITH_DMG" -eq 1 ]; then
     "$DIST_DIR/qwen3-voice-ime.dmg"
 fi
 
+if [ -z "$NOTARY_PROFILE" ] && [ -n "$NOTARY_APPLE_ID" ] && [ -n "$NOTARY_TEAM_ID" ] && [ -n "$NOTARY_PASSWORD" ]; then
+  NOTARY_PROFILE="qwen3-voice-ime"
+  xcrun notarytool store-credentials "$NOTARY_PROFILE" \
+    --apple-id "$NOTARY_APPLE_ID" \
+    --team-id "$NOTARY_TEAM_ID" \
+    --password "$NOTARY_PASSWORD"
+fi
+
+if [ -n "$NOTARY_PROFILE" ]; then
+  if [ -z "$NOTARIZE_TARGET" ]; then
+    if [ "$WITH_DMG" -eq 1 ]; then
+      NOTARIZE_TARGET="$DIST_DIR/qwen3-voice-ime.dmg"
+    elif [ -n "$INSTALLER_IDENTITY" ]; then
+      NOTARIZE_TARGET="$DIST_DIR/qwen3-voice-ime.pkg"
+    else
+      NOTARIZE_TARGET="$APP_DIR"
+    fi
+  fi
+  xcrun notarytool submit "$NOTARIZE_TARGET" --keychain-profile "$NOTARY_PROFILE" --wait
+  xcrun stapler staple "$NOTARIZE_TARGET"
+fi
+
 echo "App bundle created at: $APP_DIR"
 if [ "$WITH_DMG" -eq 1 ]; then
   echo "DMG created at: $DIST_DIR/qwen3-voice-ime.dmg"
+fi
+if [ -n "$INSTALLER_IDENTITY" ]; then
+  echo "PKG created at: $DIST_DIR/qwen3-voice-ime.pkg"
+fi
+if [ -n "$NOTARY_PROFILE" ]; then
+  echo "Notarized and stapled: $NOTARIZE_TARGET"
 fi

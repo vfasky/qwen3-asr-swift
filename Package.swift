@@ -111,7 +111,8 @@ let package = Package(
             dependencies: [
                 "Qwen3ASR",
                 "Qwen3Common"
-            ]
+            ],
+            exclude: ["Info.plist", "Qwen3VoiceIME.entitlements", "icon.png"]
         ),
         .testTarget(
             name: "Qwen3ASRTests",

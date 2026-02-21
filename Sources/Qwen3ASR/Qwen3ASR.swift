@@ -262,7 +262,8 @@ public extension Qwen3ASRModel {
     static func fromPretrained(
         modelId: String = "mlx-community/Qwen3-ASR-0.6B-4bit",
         source: ModelDownloadSource = .huggingface,
-        progressHandler: ((Double, String) -> Void)? = nil
+        progressHandler: ((Double, String) -> Void)? = nil,
+        speedHandler: ((String) -> Void)? = nil
     ) async throws -> Qwen3ASRModel {
         progressHandler?(0.0, "Downloading model...")
 
@@ -275,14 +276,13 @@ public extension Qwen3ASRModel {
         // Download weights and tokenizer files (skips files that already exist on disk)
         try await ModelDownloader.downloadWeights(
             source: source,
-        // Download is the slowest part — give it 0-80% of progress
-        //try await HuggingFaceDownloader.downloadWeights(
             modelId: modelId,
             to: cacheDir,
             additionalFiles: ["vocab.json", "merges.txt", "tokenizer_config.json"],
             progressHandler: { progress in
                 progressHandler?(progress * 0.8, "Downloading weights...")
-            }
+            },
+            speedHandler: speedHandler
         )
 
         progressHandler?(0.80, "Loading tokenizer...")

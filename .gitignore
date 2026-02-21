@@ -11,3 +11,4 @@ cosyvoice3-mlx-4bit/
 *.safetensors
 *.pt
 *.onnx
+dist/

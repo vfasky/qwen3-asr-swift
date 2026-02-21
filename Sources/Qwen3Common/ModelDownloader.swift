@@ -14,7 +14,8 @@ public enum ModelDownloader {
         modelId: String,
         to directory: URL,
         additionalFiles: [String] = [],
-        progressHandler: ((Double) -> Void)? = nil
+        progressHandler: ((Double) -> Void)? = nil,
+        speedHandler: ((String) -> Void)? = nil
     ) async throws {
         switch source {
         case .huggingface:
@@ -22,14 +23,16 @@ public enum ModelDownloader {
                 modelId: modelId,
                 to: directory,
                 additionalFiles: additionalFiles,
-                progressHandler: progressHandler
+                progressHandler: progressHandler,
+                speedHandler: speedHandler
             )
         case .modelscope:
             try await ModelScopeDownloader.downloadWeights(
                 modelId: modelId,
                 to: directory,
                 additionalFiles: additionalFiles,
-                progressHandler: progressHandler
+                progressHandler: progressHandler,
+                speedHandler: speedHandler
             )
         }
     }

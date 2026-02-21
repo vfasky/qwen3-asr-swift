@@ -25,12 +25,13 @@ public enum ModelScopeDownloader {
         url: URL,
         to localPath: URL,
         fileName: String,
-        progressHandler: ((Int64, Int64) -> Void)? = nil
+        progressHandler: ((Int64, Int64) -> Void)? = nil,
+        speedHandler: ((String) -> Void)? = nil
     ) async throws {
         var lastError: Error?
         for attempt in 1...maxRetries {
             do {
-                try await downloadFileOnce(url: url, to: localPath, fileName: fileName, progressHandler: progressHandler)
+                try await downloadFileOnce(url: url, to: localPath, fileName: fileName, progressHandler: progressHandler, speedHandler: speedHandler)
                 return
             } catch {
                 lastError = error
@@ -48,14 +49,16 @@ public enum ModelScopeDownloader {
         url: URL,
         to localPath: URL,
         fileName: String,
-        progressHandler: ((Int64, Int64) -> Void)? = nil
+        progressHandler: ((Int64, Int64) -> Void)? = nil,
+        speedHandler: ((String) -> Void)? = nil
     ) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             let delegate = DownloadDelegate(
                 localPath: localPath,
                 fileName: fileName,
                 continuation: continuation,
-                onProgress: progressHandler
+                onProgress: progressHandler,
+                onSpeed: speedHandler
             )
             let config = URLSessionConfiguration.default
             config.timeoutIntervalForRequest = 30
@@ -72,7 +75,8 @@ public enum ModelScopeDownloader {
         modelId: String,
         to directory: URL,
         additionalFiles: [String] = [],
-        progressHandler: ((Double) -> Void)? = nil
+        progressHandler: ((Double) -> Void)? = nil,
+        speedHandler: ((String) -> Void)? = nil
     ) async throws {
         var filesToDownload = ["config.json"]
         filesToDownload.append(contentsOf: additionalFiles)
@@ -123,13 +127,13 @@ public enum ModelScopeDownloader {
             let fileIndex = Double(index)
             let url = try downloadURL(modelId: modelId, file: safeFile)
 
-            try await downloadFile(url: url, to: localPath, fileName: safeFile) { bytesWritten, totalBytes in
+            try await downloadFile(url: url, to: localPath, fileName: safeFile, progressHandler: { bytesWritten, totalBytes in
                 if totalBytes > 0 {
                     let fileProgress = Double(bytesWritten) / Double(totalBytes)
                     let overall = (fileIndex + fileProgress) / totalFiles
                     progressHandler?(overall)
                 }
-            }
+            }, speedHandler: speedHandler)
 
             progressHandler?(Double(index + 1) / totalFiles)
         }
@@ -141,18 +145,25 @@ private class DownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked
     let fileName: String
     private var continuation: CheckedContinuation<Void, Error>?
     let onProgress: ((Int64, Int64) -> Void)?
+    let onSpeed: ((String) -> Void)?
     var session: URLSession?
+    
+    private var lastBytesWritten: Int64 = 0
+    private var lastTime: TimeInterval = 0
 
     init(
         localPath: URL,
         fileName: String,
         continuation: CheckedContinuation<Void, Error>,
-        onProgress: ((Int64, Int64) -> Void)?
+        onProgress: ((Int64, Int64) -> Void)?,
+        onSpeed: ((String) -> Void)? = nil
     ) {
         self.localPath = localPath
         self.fileName = fileName
         self.continuation = continuation
         self.onProgress = onProgress
+        self.onSpeed = onSpeed
+        self.lastTime = Date().timeIntervalSince1970
     }
 
     func urlSession(
@@ -163,6 +174,26 @@ private class DownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked
         totalBytesExpectedToWrite: Int64
     ) {
         onProgress?(totalBytesWritten, totalBytesExpectedToWrite)
+        
+        let currentTime = Date().timeIntervalSince1970
+        let timeElapsed = currentTime - lastTime
+        if timeElapsed >= 1.0 { // Update speed roughly every second
+            let bytesPerSecond = Double(totalBytesWritten - lastBytesWritten) / timeElapsed
+            let mbPerSecond = bytesPerSecond / 1_048_576.0
+            
+            let speedString: String
+            if mbPerSecond > 1.0 {
+                speedString = String(format: "%.1f MB/s", mbPerSecond)
+            } else {
+                let kbPerSecond = bytesPerSecond / 1024.0
+                speedString = String(format: "%.0f KB/s", kbPerSecond)
+            }
+            
+            onSpeed?(speedString)
+            
+            self.lastBytesWritten = totalBytesWritten
+            self.lastTime = currentTime
+        }
     }
 
     func urlSession(
