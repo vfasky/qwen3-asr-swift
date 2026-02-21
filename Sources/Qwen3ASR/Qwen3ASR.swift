@@ -264,7 +264,7 @@ public extension Qwen3ASRModel {
         source: ModelDownloadSource = .huggingface,
         progressHandler: ((Double, String) -> Void)? = nil
     ) async throws -> Qwen3ASRModel {
-        progressHandler?(0.1, "Downloading model...")
+        progressHandler?(0.0, "Downloading model...")
 
         // Auto-detect model size from model ID
         let modelSize = ASRModelSize.detect(from: modelId)
@@ -275,15 +275,17 @@ public extension Qwen3ASRModel {
         // Download weights and tokenizer files (skips files that already exist on disk)
         try await ModelDownloader.downloadWeights(
             source: source,
+        // Download is the slowest part — give it 0-80% of progress
+        //try await HuggingFaceDownloader.downloadWeights(
             modelId: modelId,
             to: cacheDir,
             additionalFiles: ["vocab.json", "merges.txt", "tokenizer_config.json"],
             progressHandler: { progress in
-                progressHandler?(0.1 + progress * 0.4, "Downloading weights...")
+                progressHandler?(progress * 0.8, "Downloading weights...")
             }
         )
 
-        progressHandler?(0.5, "Loading tokenizer...")
+        progressHandler?(0.80, "Loading tokenizer...")
 
         // Create model with appropriate config for detected size
         let model = Qwen3ASRModel(
@@ -299,12 +301,12 @@ public extension Qwen3ASRModel {
             model.setTokenizer(tokenizer)
         }
 
-        progressHandler?(0.6, "Loading audio encoder weights...")
+        progressHandler?(0.85, "Loading audio encoder weights...")
 
         // Load audio encoder weights
         try WeightLoader.loadWeights(into: model.audioEncoder, from: cacheDir)
 
-        progressHandler?(0.75, "Loading text decoder weights...")
+        progressHandler?(0.92, "Loading text decoder weights...")
 
         // Initialize and load text decoder
         model.initializeTextDecoder()
