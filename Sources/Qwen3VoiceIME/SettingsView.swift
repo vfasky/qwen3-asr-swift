@@ -194,23 +194,23 @@ private struct HotKeyRecorderButton: View {
 }
 
 private struct SettingsWindowActivator: NSViewRepresentable {
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
+    func makeNSView(context: Context) -> ActivatorView {
+        ActivatorView()
     }
 
-    func makeNSView(context: Context) -> NSView {
-        NSView()
-    }
+    func updateNSView(_ nsView: ActivatorView, context: Context) {}
 
-    func updateNSView(_ nsView: NSView, context: Context) {
-        guard !context.coordinator.didActivate else { return }
-        guard let window = nsView.window else { return }
-        context.coordinator.didActivate = true
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
-    }
-
-    final class Coordinator {
-        var didActivate = false
+    /// 自定义 NSView，在每次被加入窗口时自动激活 App 并置前
+    final class ActivatorView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard let window else { return }
+            // 延迟一个 runloop 确保窗口完全就绪
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+                window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
+            }
+        }
     }
 }
